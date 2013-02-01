@@ -1,0 +1,12 @@
+PARTNUM 5
+FEATURENUM 4 4 4 4 4
+FEATURE
+full gradkdes.mat rgbkdes.mat gradkdes_dep.mat normalkdes.mat jointkdes.mat
+left gradkdes.mat rgbkdes.mat gradkdes_dep.mat normalkdes.mat jointkdes.mat
+right gradkdes.mat rgbkdes.mat gradkdes_dep.mat normalkdes.mat jointkdes.mat
+top gradkdes.mat rgbkdes.mat gradkdes_dep.mat normalkdes.mat jointkdes.mat
+bottom gradkdes.mat rgbkdes.mat gradkdes_dep.mat normalkdes.mat jointkdes.mat
+JOINTMODEL pbm.model
+MINMAXVALUE svmdat.mat
+CLASSNAME classname.txt
+
