@@ -1,13 +1,28 @@
+#ifndef __FUNC__
+#define __FUNC__
+
 #include <iostream>
 #include <string>
 #include <vector>
 #include <algorithm>
 #include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/fstream.hpp>
+#include <boost/thread.hpp>
+#include <boost/thread/locks.hpp>
 #include <Eigen/Core>
 #include <Eigen/Dense>
 #include <Eigen/Eigen>
 #include <opencv2/opencv.hpp>
+
+cv::VideoCapture captureKinect( CV_CAP_OPENNI );
+extern IplImage* frame;
+extern IplImage* frame_dep;
+extern IplImage* frame_pc;
+static IplImage* out = NULL;
+static IplImage* out_dep = NULL;
+static IplImage* out_pc = NULL;
+extern boost::mutex m;
+extern bool isRun;
 
 void GetFileListFromDirectory(vector<string>& src, const char* directory)
 {
@@ -65,3 +80,78 @@ void SetupFont (CvFont& font)
   int    lineWidth=1;
   cvInitFont(&font,CV_FONT_HERSHEY_SIMPLEX|CV_FONT_ITALIC, hScale,vScale,0,lineWidth);
 }
+
+void kinectCapture()
+{
+  IplImage tmp, tmp_dep, tmp_pc;
+  cv::Mat kinimg, kinimg_dep, kinimg_pc;
+    
+  captureKinect.grab();
+  captureKinect.retrieve( kinimg, CV_CAP_OPENNI_BGR_IMAGE );//CV_8UC3
+  captureKinect.retrieve( kinimg_dep, CV_CAP_OPENNI_DEPTH_MAP );//CV_16UC1
+  captureKinect.retrieve( kinimg_pc, CV_CAP_OPENNI_POINT_CLOUD_MAP );//CV_32FC3
+  
+  for( int y = 0; y < kinimg_pc.rows; y++ ){
+    for( int x = 0; x < kinimg_pc.cols; x++ ){
+      cv::Point3f &p = ((cv::Point3f*)(kinimg_pc.data+kinimg_pc.step.p[0]*y))[x];
+      //std::cout << p.x << " " << p.y << " " << p.z << std::endl;
+    }
+  }
+  
+  //Sharing the image data. not copy.
+  tmp = kinimg; tmp_dep = kinimg_dep; tmp_pc = kinimg_pc;
+  
+  cvReleaseImage( &out );
+  cvReleaseImage( &out_dep );
+  cvReleaseImage( &out_pc );
+  out = cvCreateImage( cvSize( tmp.width, tmp.height ), IPL_DEPTH_8U, 3 );
+  out_dep = cvCreateImage( cvSize( tmp.width, tmp.height ), IPL_DEPTH_16U, 1 );
+  out_pc = cvCreateImage( cvSize( tmp.width, tmp.height ), IPL_DEPTH_32F, 3 );
+  cvCopy( &tmp, out, NULL );
+  cvCopy( &tmp_dep, out_dep, NULL );
+  cvCopy( &tmp_pc, out_pc, NULL );
+  
+  //Sharing the image data. not copy.
+  frame = out; frame_dep = out_dep; frame_pc = out_pc;
+}
+
+void ThreadCaptureFrame()
+{
+  std::cout << "Cam capture started..." << std::endl;
+  
+  if(!captureKinect.isOpened()){
+    std::cerr << "can't open Kinect" << std::endl;
+    exit(-1);
+  }
+  //CvFont fpsFont;
+  //cvInitFont(&fpsFont, CV_FONT_HERSHEY_SIMPLEX , 1.0f, 1.0f, 0, 1, CV_AA);
+  //char fps[32] = "15";
+  
+  int key = 0;
+  
+  //cvNamedWindow("Camera View", CV_WINDOW_AUTOSIZE);
+  //cvMoveWindow("Camera View", 50, 50);
+  
+  while ((char)key != 'q' & 0xff)
+    {
+      {
+	boost::mutex::scoped_lock lock(m);
+	kinectCapture();
+      }
+      
+      if (!frame) break;
+      
+      //cvPutText(frame, fps, cvPoint(10,450), &fpsFont, cvScalar(0,0,255));
+      //cvShowImage("Camera View", frame);
+      key = cvWaitKey(10);
+    }
+  
+  cvReleaseImage(&frame);
+  cvReleaseImage(&frame_dep);
+  
+  captureKinect.release();
+  std::cout << "Cam capture ended" << std::endl;
+  isRun = false;
+}
+
+#endif

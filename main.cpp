@@ -10,6 +10,7 @@
 
 #include "pbm.h"
 #include "kerneldesc.h"
+#include "detector.h"
 #include "matio.h"
 #include "func.h"
 
@@ -55,15 +56,85 @@ void DataSetDemo( char** argv )
   cvDestroyAllWindows();
 }
 
+/****************************************************************
+ *
+ ***************************************************************/
+IplImage* frame = NULL; IplImage* frame_dep = NULL; IplImage* frame_pc = NULL;
+boost::mutex m; bool isRun = true;
+void ThreadSegmentation()
+{
+  Detector detector;
+  
+  IplImage* rgb_src = NULL;
+  IplImage* dep_src = NULL;
+  IplImage* pc_src = NULL;
+  //pcl::PointCloud<pcl::PointXYZRGBA>::Ptr pc_pcl;
+  pcl::PointCloud<pcl::PointXYZRGBA>::Ptr pc_pcl( new pcl::PointCloud<pcl::PointXYZRGBA> );
+  std::vector<Eigen::MatrixXf> top_left;
+  std::vector<CvPoint> bbox2d;
+  std::vector<Eigen::Vector4f> bbox3d; 
+  
+  bool isGetImg = false;
+  cvNamedWindow("Process View", CV_WINDOW_AUTOSIZE);
+  cvMoveWindow("Process View", 50, 50);
+  
+  while( isRun )
+    {
+      top_left.clear(); bbox2d.clear(); bbox3d.clear();
+      
+      {
+	boost::mutex::scoped_lock lock(m);
+	if( frame != NULL && frame_dep != NULL && frame_pc != NULL ){
+	  
+	  cvReleaseImage(&rgb_src);
+	  cvReleaseImage(&dep_src);
+	  cvReleaseImage(&pc_src);
+	  rgb_src = cvCloneImage(frame);
+	  dep_src = cvCloneImage(frame_dep);
+	  pc_src = cvCloneImage(frame_pc);
+	  
+	  isGetImg = true;
+	}
+	
+      }
+      
+      if( isGetImg ){
+	detector.setpcl( pc_src, pc_pcl );
+	detector.detect( dep_src, pc_pcl, top_left, bbox2d, bbox3d );
+	isGetImg = false;
+      }
+      
+      for( int i = 0; i < bbox2d.size(); i+=2 ){
+	cvRectangle( rgb_src, cvPoint( (int)bbox2d[i].x, (int)bbox2d[i].y ),
+		     cvPoint( (int)bbox2d[i+1].x, (int)bbox2d[i+1].y ),
+		     cvScalar( 0, 0, 255 ), 2, 8, 0 );
+      }
+      cvShowImage("Process View", rgb_src);
+    }
+}
+
+void SegmentationDemo()
+{
+  
+  boost::thread workerThread(&ThreadCaptureFrame);
+  boost::thread detectorThread(&ThreadSegmentation);
+  workerThread.join();
+  detectorThread.join();
+}
+
 int main( int argc, char** argv )
 {
   //Simple Demo
   //ImageDemo( argv );
   
   //Dataset Demo
-  DataSetDemo( argv );
+  //DataSetDemo( argv );
+
+  //Segmentation Demo (No Recognition)
+  SegmentationDemo();
   
   //Live(Kinect) Demo
+  
   
   return 0;
 }

@@ -1,5 +1,16 @@
 #include "detector.h"
 
+float colors[10][3] = { { 0, 255, 0 },
+			{ 0, 0, 255 },
+			{ 255, 0, 255 },
+			{ 0, 255, 255 },
+			{ 255, 255, 0 },
+			{ 125, 125, 125 },
+			{ 125, 0, 255 },
+			{ 255, 125, 0 },
+			{ 255, 0, 125 },
+			{ 0, 125, 255 } };
+
 Detector::Detector()
 {
 
@@ -11,23 +22,28 @@ Detector::~Detector()
 }
 
 //OpenNI Grabberより得られた3次元座標を格納した画像データ->pc
-pcl::PointCloud<pcl::PointXYZRGBA>::Ptr Detector::setpcl( IplImage* pc )
+void Detector::setpcl( IplImage* pc, pcl::PointCloud<pcl::PointXYZRGBA>::Ptr tmp)
 {
-  pcl::PointCloud<pcl::PointXYZRGBA>::Ptr tmp( new pcl::PointCloud<pcl::PointXYZRGBA> );
   tmp->width = pc->width; tmp->height = pc->height;
   tmp->resize( tmp->width * tmp->height );
   
-  //fast access implimentation
+  //キャスト回数を減らして高速化
+  int step = pc->widthStep/sizeof(float);
+  float *pData = reinterpret_cast<float *>(pc->imageData);
+  
   for( int y = 0; y < pc->height; y++ ){
     for( int x = 0; x < pc->width; x++ ){
-      int a = pc->widthStep*y+(x*3);
-      tmp->points[y*pc->width+x].x = pc->imageData[a+0];
-      tmp->points[y*pc->width+x].y = pc->imageData[a+1];
-      tmp->points[y*pc->width+x].z = pc->imageData[a+2];
+      //tmp->points[y*pc->width+x].x = reinterpret_cast<float *>(pc->imageData + y*pc->widthStep)[x*pc->nChannels];
+      //tmp->points[y*pc->width+x].y = reinterpret_cast<float *>(pc->imageData + y*pc->widthStep)[x*pc->nChannels+1];
+      //tmp->points[y*pc->width+x].y = reinterpret_cast<float *>(pc->imageData + y*pc->widthStep)[x*pc->nChannels+2];
+      
+      //Fast implementation
+      tmp->points[y*pc->width+x].x = pData[y*step+x*pc->nChannels+0];
+      tmp->points[y*pc->width+x].y = pData[y*step+x*pc->nChannels+1];
+      tmp->points[y*pc->width+x].z = pData[y*step+x*pc->nChannels+2];
     }
   }
   
-  return tmp;
 }
 
 void Detector::detect(IplImage* dep, 
@@ -43,6 +59,8 @@ void Detector::detect(IplImage* dep,
   
   planeSeg( target, segmented, 0.01 );
   cluster( segmented, colored, divide );
+  if( divide.size() == 0 )
+    return;
   bbox( divide, colored, bbox3d );
   bbox2dbbox( dep, bbox3d, bbox2d );
   setTopleftPos( bbox2d, topleft );
@@ -50,8 +68,6 @@ void Detector::detect(IplImage* dep,
 
 void Detector::planeSeg(pcl::PointCloud<pcl::PointXYZRGBA>& cloud,
 			pcl::PointCloud<pcl::PointXYZRGBA>::Ptr cloud_filtered,
-			//pcl::PointCloud<pcl::PointXYZRGBA>::Ptr clustered,
-			//std::vector< pcl::PointCloud<pcl::PointXYZRGBA> >& divide,
 			double threshould )
 {
   boost::timer t;
@@ -59,13 +75,13 @@ void Detector::planeSeg(pcl::PointCloud<pcl::PointXYZRGBA>& cloud,
   pcl::ModelCoefficients::Ptr coefficients (new pcl::ModelCoefficients);  
   pcl::PointIndices::Ptr inliers (new pcl::PointIndices);  
   
-  //delete nan data nad not near data from kinect raw data
+  //delete nan data and not near data from kinect raw data
   pcl::PassThrough<pcl::PointXYZRGBA> pass;
   pass.setInputCloud( cloud.makeShared() );//makeShared provide smartPtr.
   pass.setFilterFieldName( "z" );
-  pass.setFilterLimits( 0.0, 0.8 );
+  pass.setFilterLimits( 0.0, 1.0 );
   pass.filter( cloud );
-
+  
   //Down Sampling
   pcl::VoxelGrid<pcl::PointXYZRGBA> sor;
   sor.setInputCloud( cloud.makeShared() );
@@ -74,7 +90,6 @@ void Detector::planeSeg(pcl::PointCloud<pcl::PointXYZRGBA>& cloud,
   
   std::cout << "Down Sampling:" << t.elapsed() << " sec" << std::endl;
   t.restart();
-  
   
   // Create the segmentation object  
   pcl::SACSegmentation<pcl::PointXYZRGBA> seg;  
@@ -87,7 +102,7 @@ void Detector::planeSeg(pcl::PointCloud<pcl::PointXYZRGBA>& cloud,
   
   seg.setInputCloud (cloud.makeShared ());  
   seg.segment (*inliers, *coefficients);
-  
+
   // Colored the plane part for debug
   for (size_t i = 0; i < inliers->indices.size (); ++i) {  
     cloud.points[inliers->indices[i]].r = 255;  
@@ -107,12 +122,10 @@ void Detector::planeSeg(pcl::PointCloud<pcl::PointXYZRGBA>& cloud,
   extract.setIndices( inliers );
   //true:delete plane part, false:delete not plane part.
   extract.setNegative( true );
-  //extract.filter( cloud );
   extract.filter( *cloud_filtered );
   
   std::cout << "Plane Segmentation:" << t.elapsed() << " sec" << std::endl;
   t.restart();
-  
 }
 
 void Detector::cluster( pcl::PointCloud<pcl::PointXYZRGBA>::Ptr cloud,
@@ -253,7 +266,8 @@ void Detector::bbox2dbbox( IplImage* dep,
 void Detector::setTopleftPos( std::vector<CvPoint>& bbox2d,
 			      std::vector<Eigen::MatrixXf>& topleft )
 {
-  Eigen::MatrixXf tmp;
+  //VectorXf is a dynamic-size vector of floats Matrix<float, Dynamic, 1>//
+  Eigen::VectorXf tmp(2);
   for( int i = 0; i < bbox2d.size(); i+=2 ){
     //bbox2はバウンディングボックスの左上点、右下点が格納されている
     //bbox2dbbox関数にて[i],[i+1]の内[i]に左上点が格納されているのが保証されている
@@ -262,8 +276,8 @@ void Detector::setTopleftPos( std::vector<CvPoint>& bbox2d,
     //これはMatlab上では画像が(1,1)から始まるからである OpenCV等では(0,0)から始まるので注意
     //ここではそのオフセットとしてmatlab座標系に変換している
     //なお、(0)にy座標の値、(1)にx座標が格納されているので注意 これもmatlab座標系の名残
-    tmp(0) = bbox2d[i].y+1;
-    tmp(1) = bbox2d[i].x+1;
+    tmp[0] = bbox2d[i].y+1;
+    tmp[1] = bbox2d[i].x+1;
     
     topleft.push_back(tmp);
   }

@@ -24,25 +24,13 @@
 //#include <pcl/sample_consensus/model_types.h>  
 //#include <pcl/features/normal_3d.h>
 
-
-float colors[10][3] = { { 0, 255, 0 },
-			{ 0, 0, 255 },
-			{ 255, 0, 255 },
-			{ 0, 255, 255 },
-			{ 255, 255, 0 },
-			{ 125, 125, 125 },
-			{ 125, 0, 255 },
-			{ 255, 125, 0 },
-			{ 255, 0, 125 },
-			{ 0, 125, 255 } };
-
 class Detector
 {
  public:
   Detector();
   ~Detector();
   
-  pcl::PointCloud<pcl::PointXYZRGBA>::Ptr setpcl( IplImage* depth );
+  void setpcl( IplImage* pc, pcl::PointCloud<pcl::PointXYZRGBA>::Ptr pcl_pc );
   void detect( IplImage* dep,
 	       pcl::PointCloud<pcl::PointXYZRGBA>::Ptr,
 	       std::vector<Eigen::MatrixXf>& topleft,
@@ -51,9 +39,8 @@ class Detector
   
   void planeSeg( pcl::PointCloud<pcl::PointXYZRGBA>& cloud,
 		 pcl::PointCloud<pcl::PointXYZRGBA>::Ptr filtered,
-		 //pcl::PointCloud<pcl::PointXYZRGBA>::Ptr clustered,
-		 //std::vector< pcl::PointCloud<pcl::PointXYZRGBA> >& divide,
 		 double threshould );
+  
   void cluster( pcl::PointCloud<pcl::PointXYZRGBA>::Ptr cloud,
 		pcl::PointCloud<pcl::PointXYZRGBA>::Ptr coloredCloud,
 		std::vector< pcl::PointCloud<pcl::PointXYZRGBA> >& divide );
