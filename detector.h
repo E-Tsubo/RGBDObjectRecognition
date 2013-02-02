@@ -52,6 +52,9 @@ class Detector
   void bbox2dbbox( IplImage* dep,
 		   std::vector<Eigen::Vector4f>& bbox3d,
 		   std::vector<CvPoint>& bbox2d );
+  
+  void evalbboxPos( std::vector<CvPoint>& bbox2d, IplImage* dep );
+  
   void setTopleftPos( std::vector<CvPoint>& bbox2d,
 		      std::vector<Eigen::MatrixXf>& topleft );
  private:

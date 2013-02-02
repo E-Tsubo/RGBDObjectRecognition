@@ -1,5 +1,5 @@
 CXX	= g++
-CFLAG	= -g -msse -msse2 -msse3 -msse4 -fopenmp
+CFLAG	= -O3 -msse -msse2 -msse3 -msse4 -fopenmp
 PCL_FLAG= `pkg-config pcl_common-1.5 pcl_io-1.5 pcl_sample_consensus-1.5 pcl_filters-1.5 pcl_segmentation-1.5 pcl_range_image_border_extractor-1.5 --cflags --libs`
 
 all: pbmrecog

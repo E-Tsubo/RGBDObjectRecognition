@@ -63,6 +63,7 @@ void Detector::detect(IplImage* dep,
     return;
   bbox( divide, colored, bbox3d );
   bbox2dbbox( dep, bbox3d, bbox2d );
+  evalbboxPos( bbox2d, dep );
   setTopleftPos( bbox2d, topleft );
 }
 
@@ -79,7 +80,7 @@ void Detector::planeSeg(pcl::PointCloud<pcl::PointXYZRGBA>& cloud,
   pcl::PassThrough<pcl::PointXYZRGBA> pass;
   pass.setInputCloud( cloud.makeShared() );//makeShared provide smartPtr.
   pass.setFilterFieldName( "z" );
-  pass.setFilterLimits( 0.0, 1.0 );
+  pass.setFilterLimits( 0.0, 0.8 );
   pass.filter( cloud );
   
   //Down Sampling
@@ -262,6 +263,22 @@ void Detector::bbox2dbbox( IplImage* dep,
   
 }
 
+void Detector::evalbboxPos( std::vector<CvPoint>& bbox2d, IplImage* dep )
+{
+  int width = dep->width - 1; int height = dep->height - 1;
+  for( std::vector<CvPoint>::iterator itr = bbox2d.begin();
+       itr != bbox2d.end(); itr++ ){
+    if( itr->x < 0 )
+      itr->x = 0;
+    else if( itr->x > width )
+      itr->x = width;
+    
+    if( itr->y < 0 )
+      itr->y = 0;
+    else if( itr->y > height )
+      itr->y = height;
+  }
+}
 
 void Detector::setTopleftPos( std::vector<CvPoint>& bbox2d,
 			      std::vector<Eigen::MatrixXf>& topleft )
