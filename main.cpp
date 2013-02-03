@@ -111,6 +111,7 @@ void ThreadSegmentation()
 void ThreadLive( char* model )
 {
   CvFont font; SetupFont(font);
+  CvFont fpsFont; cvInitFont(&fpsFont,CV_FONT_HERSHEY_SIMPLEX|CV_FONT_ITALIC, 1, 1, 0, 1);
   
   PBM pbm(model);
   KernelDescManager kdm;
@@ -124,9 +125,11 @@ void ThreadLive( char* model )
   bool isGetImg = false;
   cvNamedWindow("Process View", CV_WINDOW_AUTOSIZE);
   cvMoveWindow("Process View", 50, 50);
+  Timer t;
   
   while( isRun )
     {
+      
       top_left.clear(); bbox2d.clear(); bbox3d.clear();
       {
 	boost::mutex::scoped_lock lock(m);
@@ -144,35 +147,43 @@ void ThreadLive( char* model )
       }
       
       if( isGetImg ){
+	t.start();
+	
 	detector.setpcl( pc_src, pc_pcl );
 	detector.detect( dep_src, pc_pcl, top_left, bbox2d, bbox3d );
+	
+	//Recognition Loop
+	for( int i = 0; i < bbox2d.size(); i+=2 ){
+	  cv::Rect brect( (int)bbox2d[i].x, (int)bbox2d[i].y, (int)bbox2d[i+1].x-(int)bbox2d[i+0].x, (int)bbox2d[i+1].y-(int)bbox2d[i+0].y );
+	  
+	  cvSetImageROI( rgb_src, brect );
+	  cvSetImageROI( dep_src, brect );
+	  IplImage* rgb_crop = cvCreateImage( cvSize(brect.width, brect.height), IPL_DEPTH_8U, 3 );
+	  IplImage* dep_crop = cvCreateImage( cvSize(brect.width, brect.height), IPL_DEPTH_16U, 1 );
+	  cvCopy( rgb_src, rgb_crop, NULL );
+	  cvResetImageROI( rgb_src );
+	  cvCopy( dep_src, dep_crop, NULL );
+	  cvResetImageROI( dep_src );
+	  
+	  double resultLable = pbm.Process(kdm, rgb_crop, dep_crop, top_left[i/2]);
+	  std::string resultObj = pbm.getObjName(resultLable-1);
+	  
+	  cvRectangle( rgb_src, cvPoint( (int)bbox2d[i].x, (int)bbox2d[i].y ),
+		       cvPoint( (int)bbox2d[i+1].x, (int)bbox2d[i+1].y ),
+		       cvScalar( 0, 0, 255 ), 2, 8, 0 );
+	  cvPutText(rgb_src, resultObj.c_str(), cvPoint(bbox2d[i].x,bbox2d[i].y), &font,cvScalar(0,256,0));
+	  cvReleaseImage(&rgb_crop);
+	  cvReleaseImage(&dep_crop);
+	}
+	
+	char fps[16];
+	sprintf( fps, "%.3lf [sec]", t.get() );
+	cvPutText(rgb_src, fps, cvPoint(rgb_src->width-110,30), &font, cvScalar(0,0,256));
+	cvShowImage("Process View", rgb_src);
+
 	isGetImg = false;
       }
       
-      //Recognition Loop
-      for( int i = 0; i < bbox2d.size(); i+=2 ){
-	cv::Rect brect( (int)bbox2d[i].x, (int)bbox2d[i].y, (int)bbox2d[i+1].x-(int)bbox2d[i+0].x, (int)bbox2d[i+1].y-(int)bbox2d[i+0].y );
-	
-	cvSetImageROI( rgb_src, brect );
-	cvSetImageROI( dep_src, brect );
-	IplImage* rgb_crop = cvCreateImage( cvSize(brect.width, brect.height), IPL_DEPTH_8U, 3 );
-	IplImage* dep_crop = cvCreateImage( cvSize(brect.width, brect.height), IPL_DEPTH_16U, 1 );
-	cvCopy( rgb_src, rgb_crop, NULL );
-	cvResetImageROI( rgb_src );
-	cvCopy( dep_src, dep_crop, NULL );
-	cvResetImageROI( dep_src );
-	
-	double resultLable = pbm.Process(kdm, rgb_crop, dep_crop, top_left[i/2]);
-	std::string resultObj = pbm.getObjName(resultLable-1);
-	
-	cvRectangle( rgb_src, cvPoint( (int)bbox2d[i].x, (int)bbox2d[i].y ),
-		     cvPoint( (int)bbox2d[i+1].x, (int)bbox2d[i+1].y ),
-		     cvScalar( 0, 0, 255 ), 2, 8, 0 );
-	cvPutText(rgb_src, resultObj.c_str(), cvPoint(bbox2d[i].x,bbox2d[i].y), &font,cvScalar(0,256,0));
-	cvReleaseImage(&rgb_crop);
-	cvReleaseImage(&dep_crop);
-      }
-      cvShowImage("Process View", rgb_src);
     }
 }
 

@@ -430,40 +430,46 @@ bool PBM::extractFea( int feaIdx, MatrixXf& feaArr, MatrixXf& feaMag, MatrixXf& 
    * Resize
    ***************************************************************************************/
   IplImage* rgb, *dep;
-  rgb = cvCreateImage( cvSize( rgb_init->width, rgb_init->height ), IPL_DEPTH_32F, rgb_init->nChannels );
-  dep = cvCreateImage( cvSize( dep_init->width, dep_init->height ), IPL_DEPTH_32F, dep_init->nChannels );
-  rgb = rgb_init;
-  dep = dep_init;
-  int rgb_w=rgb->width, rgb_h=rgb->height;
-  int dep_w=dep->width, dep_h=dep->height;
   
-  /*
   const double EPS_RATIO=0.0001;
-  int max_imsize=(int)get_value<float>(this->model_kdes, (model_var+"->kdes->max_imsize").c_str() );
-  int min_imsize=(int)get_value<float>(this->model_kdes, (model_var+"->kdes->min_imsize").c_str() );
+  int max_imsize = 300;
+  int min_imsize = 45;//TODO
+  int MAX_IMAGE_SIZE = 300;
+  //int max_imsize=(int)get_value<float>(this->model_kdes, (model_var+"->kdes->max_imsize").c_str() );
+  //int min_imsize=(int)get_value<float>(this->model_kdes, (model_var+"->kdes->min_imsize").c_str() );
   
   double ratio, ratio_f, ratio_max, ratio_min;
   ratio_f=1.0;
   if (MAX_IMAGE_SIZE>0) {
-    ratio_f = max( ratio_f, max( (double)img_init->width/this->MAX_IMAGE_SIZE, (double)img_init->height/this->MAX_IMAGE_SIZE ) );
+    ratio_f = max( ratio_f, max( (double)rgb_init->width/MAX_IMAGE_SIZE, (double)rgb_init->height/MAX_IMAGE_SIZE ) );
   }
-  ratio_max = max( max( (double)img_init->width/max_imsize, (double)img_init->height/max_imsize ), 1.0 );
-  ratio_min = min( min( (double)img_init->width/min_imsize, (double)img_init->height/min_imsize ), 1.0 );
+  ratio_max = max( max( (double)rgb_init->width/max_imsize, (double)rgb_init->height/max_imsize ), 1.0 );
+  ratio_min = min( min( (double)rgb_init->width/min_imsize, (double)rgb_init->height/min_imsize ), 1.0 );
   if (ratio_min<1.0-EPS_RATIO) {
     ratio=ratio_min;
   } else {
     ratio=max(ratio_f,ratio_max);
   }
+  
   if (ratio>1.0-EPS_RATIO || ratio<1.0-EPS_RATIO) {
+    rgb = cvCreateImage( cvSize((rgb_init->width)/ratio,(rgb_init->height)/ratio), IPL_DEPTH_32F, rgb_init->nChannels);
+    dep = cvCreateImage( cvSize((rgb_init->width)/ratio,(rgb_init->height)/ratio), IPL_DEPTH_32F, dep_init->nChannels);
     int method=CV_INTER_CUBIC;
-    if (MODEL_TYPE==4 || MODEL_TYPE==5) method=CV_INTER_NN;   // nearest neighbor for depth image
-    img = cvCreateImage( cvSize((img_init->width)/ratio,(img_init->height)/ratio), IPL_DEPTH_32F, img_init->nChannels);
-    cvResize( img_init, img, method );
-    cvReleaseImage(&img_init);
+    cvResize( rgb_init, rgb, method );
+    method=CV_INTER_NN;   // nearest neighbor for depth image
+    cvResize( dep_init, dep, method );
+    std::cout << "Resizing..." << std::endl;
   } else {
-    img=img_init;
+    rgb = cvCreateImage( cvSize( rgb_init->width, rgb_init->height ), IPL_DEPTH_32F, rgb_init->nChannels );
+    dep = cvCreateImage( cvSize( dep_init->width, dep_init->height ), IPL_DEPTH_32F, dep_init->nChannels );
+    rgb = rgb_init;
+    dep = dep_init;
   }
-  */
+  
+  int rgb_w=rgb->width, rgb_h=rgb->height;
+  int dep_w=dep->width, dep_h=dep->height;
+  cvReleaseImage(&rgb_init);
+  cvReleaseImage(&dep_init);
   
   /****************************************************************************************
    * Extract Featurte
