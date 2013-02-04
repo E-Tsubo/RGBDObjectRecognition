@@ -361,47 +361,51 @@ void PBM::pDetectorProcessFea(MatrixXf* imfea, KernelDescManager& kdm,
     
   }else{
     //Multi Feature( RGB-D Joint Feature )
+    int threadNum = std::max( m_pDetector[0].feaNum, m_pdNum );
 #if MULTITHREAD_PART  
-    omp_set_num_threads(m_pDetector[0].feaNum);
+    omp_set_num_threads(threadNum);
     std::cerr << "[OpenMP] Enable Thread Num. " << omp_get_max_threads() << std::endl;
-#pragma omp parallel for
+#pragma omp parallel
+    {
+#pragma omp for
 #endif
-    for( int loopfea = 0; loopfea < m_pDetector[0].feaNum; loopfea++ ){//各特徴量に関して計算
-      extractFea( loopfea, tmp_feaArr[loopfea], tmp_feaMag[loopfea], tmp_fgrid_x[loopfea], tmp_fgrid_y[loopfea], kdm, rgb, dep, top_left );
-    }
+      for( int loopfea = 0; loopfea < m_pDetector[0].feaNum; loopfea++ ){//各特徴量に関して計算
+	extractFea( loopfea, tmp_feaArr[loopfea], tmp_feaMag[loopfea], tmp_fgrid_x[loopfea], tmp_fgrid_y[loopfea], kdm, rgb, dep, top_left );
+      }
     
 #if MULTITHREAD_PART  
-    omp_set_num_threads(m_pdNum);
-    //std::cerr << "[OpenMP] Enable Thread Num. " << omp_get_max_threads() << std::endl;
-#pragma omp parallel for 
+#pragma omp for 
 #endif
-    for( int looppd = 0; looppd < m_pdNum; looppd++ ){//各part-detectorモデル用にbag of feature化
-      MatrixXf tmp_imfea[m_pDetector[looppd].feaNum];
-      std::cerr << " CVSVDEMK Thread " << looppd+1 << std::endl;//debug
-      for( int j = 0; j < m_pDetector[looppd].feaNum; j++ ){
-	kdm.CKSVDEMK( tmp_imfea[j], tmp_feaArr[j], tmp_feaMag[j],
-		      tmp_fgrid_y[j], tmp_fgrid_x[j], rgb->height, rgb->width,
-		      m_pDetector[looppd].kdesparam[j].emkWords,
-		      m_pDetector[looppd].kdesparam[j].emkG,
-		      m_pDetector[looppd].kdesparam[j].emkPyramid,
-		      m_pDetector[looppd].kdesparam[j].emkKparam );
+      for( int looppd = 0; looppd < m_pdNum; looppd++ ){//各part-detectorモデル用にbag of feature化
+	MatrixXf tmp_imfea[m_pDetector[looppd].feaNum];
+	std::cerr << " CVSVDEMK Thread " << looppd+1 << std::endl;//debug
+	for( int j = 0; j < m_pDetector[looppd].feaNum; j++ ){
+	  kdm.CKSVDEMK( tmp_imfea[j], tmp_feaArr[j], tmp_feaMag[j],
+			tmp_fgrid_y[j], tmp_fgrid_x[j], rgb->height, rgb->width,
+			m_pDetector[looppd].kdesparam[j].emkWords,
+			m_pDetector[looppd].kdesparam[j].emkG,
+			m_pDetector[looppd].kdesparam[j].emkPyramid,
+			m_pDetector[looppd].kdesparam[j].emkKparam );
+	}
+	
+	//Joint
+	int dim = 0;
+	for( int j = 0; j < m_pDetector[looppd].feaNum; j++ ){
+	  //std::cout << "test"<<k << std::endl;//debug
+	  dim += tmp_imfea[j].rows();
+	}
+	int index = 0;
+	(imfea[looppd]).resize(dim,1);
+	for( int j = 0; j < m_pDetector[looppd].feaNum; j++ )
+	  for( int k = 0; k < tmp_imfea[j].rows(); k++ ){
+	    (imfea[looppd])(index,0) = tmp_imfea[j](k,0);
+	    index++;
+	  }
+	
       }
       
-      //Joint
-      int dim = 0;
-      for( int j = 0; j < m_pDetector[looppd].feaNum; j++ ){
-	//std::cout << "test"<<k << std::endl;//debug
-	dim += tmp_imfea[j].rows();
-      }
-      int index = 0;
-      (imfea[looppd]).resize(dim,1);
-      for( int j = 0; j < m_pDetector[looppd].feaNum; j++ )
-	for( int k = 0; k < tmp_imfea[j].rows(); k++ ){
-	  (imfea[looppd])(index,0) = tmp_imfea[j](k,0);
-	  index++;
-	}
-
-    }
+    }//OpenMP [omp parallel]
+    
   }
   
   exec_time = timer.get();
