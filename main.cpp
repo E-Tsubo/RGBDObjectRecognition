@@ -56,6 +56,75 @@ void DataSetDemo( char** argv )
   cvDestroyAllWindows();
 }
 
+
+void DataSetDemo_Segmentation( char** argv )
+{
+  std::string rootImgPath( argv[2] );
+  
+  cvNamedWindow("Input Image", CV_WINDOW_AUTOSIZE);
+  CvFont font; SetupFont(font);
+  
+  PBM pbm(argv[1]);
+  KernelDescManager kdm;
+  Detector detector;
+  
+  pcl::PointCloud<pcl::PointXYZRGBA>::Ptr pc_pcl( new pcl::PointCloud<pcl::PointXYZRGBA> );
+  std::vector<Eigen::MatrixXf> top_left; std::vector<CvPoint> bbox2d; std::vector<Eigen::Vector4f> bbox3d; 
+  
+  std::vector<std::string> fileList;
+  GetFileListFromDirectory( fileList, rootImgPath.c_str() );
+  
+  std::vector<std::string>::iterator itr;
+  for( itr = fileList.begin(); itr < fileList.end(); ++itr ){
+    std::cerr << "Image " << (*itr).c_str() << std::endl;
+    
+    IplImage* rgb = cvLoadImage( (rootImgPath + *itr).c_str(), CV_LOAD_IMAGE_ANYCOLOR | CV_LOAD_IMAGE_ANYDEPTH );
+    ++itr;
+    std::cerr << "Image " << (*itr).c_str() << std::endl;
+    IplImage* dep = cvLoadImage( (rootImgPath + *itr).c_str(), CV_LOAD_IMAGE_ANYCOLOR | CV_LOAD_IMAGE_ANYDEPTH );
+    ++itr;
+    
+    IplImage* pc = cvCreateImage( cvSize(dep->width, dep->height), IPL_DEPTH_32F, 1 );
+    
+    //Main Function
+    depth2cloud( &kdm, dep, pc );
+    detector.setpcl( pc, pc_pcl );
+    detector.detect( dep, pc_pcl, top_left, bbox2d, bbox3d );
+    
+    for( int i = 0; i < bbox2d.size(); i+=2 ){
+      cv::Rect brect( (int)bbox2d[i].x, (int)bbox2d[i].y, (int)bbox2d[i+1].x-(int)bbox2d[i+0].x, (int)bbox2d[i+1].y-(int)bbox2d[i+0].y );
+      
+      cvSetImageROI( rgb, brect );
+      cvSetImageROI( dep, brect );
+      IplImage* rgb_crop = cvCreateImage( cvSize(brect.width, brect.height), IPL_DEPTH_8U, 3 );
+      IplImage* dep_crop = cvCreateImage( cvSize(brect.width, brect.height), IPL_DEPTH_16U, 1 );
+      cvCopy( rgb, rgb_crop, NULL );
+      cvResetImageROI( rgb );
+      cvCopy( dep, dep_crop, NULL );
+      cvResetImageROI( dep );
+      
+      double resultLable = pbm.Process(kdm, rgb_crop, dep_crop, top_left[i/2]);
+      std::string resultObj = pbm.getObjName(resultLable-1);
+      
+      cvRectangle( rgb, cvPoint( (int)bbox2d[i].x, (int)bbox2d[i].y ),
+		   cvPoint( (int)bbox2d[i+1].x, (int)bbox2d[i+1].y ),
+		   cvScalar( 0, 0, 255 ), 2, 8, 0 );
+      cvPutText(rgb, resultObj.c_str(), cvPoint(bbox2d[i].x,bbox2d[i].y), &font,cvScalar(0,256,0));
+      cvReleaseImage(&rgb_crop);
+      cvReleaseImage(&dep_crop);
+    }
+    
+    //Show Result
+    cvShowImage("Input Image", rgb);
+    cvWaitKey(0);
+    
+    //Release
+    cvReleaseImage(&rgb);
+    cvReleaseImage(&dep);
+  }
+  cvDestroyAllWindows();
+}
+
 /****************************************************************
  *
  ***************************************************************/
@@ -199,7 +268,6 @@ void SegmentationDemo()
 void LiveDemo(char* model)
 {
   boost::thread workerThread(&ThreadCaptureFrame);
-  //boost::thread RecognitionThread(&ThreadLive(&model));
   boost::thread RecognitionThread(boost::bind(&ThreadLive, model));
   workerThread.join();
   RecognitionThread.join();
@@ -212,6 +280,9 @@ int main( int argc, char** argv )
   
   //Dataset Demo
   //DataSetDemo( argv );
+  
+  //Dataset Demo
+  //DataSetDemo_Segmentation( argv );//Not yet!!
 
   //Segmentation Demo (No Recognition)
   //SegmentationDemo();

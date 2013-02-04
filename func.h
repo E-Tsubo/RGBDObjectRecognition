@@ -13,6 +13,7 @@
 #include <Eigen/Dense>
 #include <Eigen/Eigen>
 #include <opencv2/opencv.hpp>
+#include "kerneldesc.h"
 
 cv::VideoCapture captureKinect( CV_CAP_OPENNI );
 extern IplImage* frame;
@@ -154,4 +155,31 @@ void ThreadCaptureFrame()
   isRun = false;
 }
 
+void depth2cloud(KernelDescManager* kdm, IplImage* dep, IplImage* pc)
+{
+  int height=dep->height;
+  int width=dep->width;
+  
+  Eigen::MatrixXf depth(height,width);
+  Eigen::MatrixXf tmp(2,1); tmp(0,0) = 1.0; tmp(1,0) = 1.0;
+  
+  CvScalar s;
+  for( int y = 0; y < height; y++ ){
+    for( int x = 0; x < width; x++ ){
+      s = cvGet2D( dep, y, x );
+      depth(y,x) = s.val[0];
+    }
+  }
+  
+  Eigen::MatrixXf pcloud_x, pcloud_y, pcloud_z;
+  kdm->depth2cloud( depth, pcloud_x, pcloud_y, pcloud_z, tmp );
+  
+  for( int y = 0; y < height; y++ ){
+    for( int x = 0; x < width; x++ ){
+      reinterpret_cast<float *>(pc->imageData + y*pc->widthStep/sizeof(float))[x*pc->nChannels+0] = pcloud_x(y,x)/1000.0;//mm->m
+      reinterpret_cast<float *>(pc->imageData + y*pc->widthStep/sizeof(float))[x*pc->nChannels+1] = pcloud_y(y,x)/1000.0;
+      reinterpret_cast<float *>(pc->imageData + y*pc->widthStep/sizeof(float))[x*pc->nChannels+2] = pcloud_z(y,x)/1000.0;
+    }
+  }
+}
 #endif

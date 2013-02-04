@@ -221,8 +221,8 @@ void Detector::bbox2dbbox( IplImage* dep,
   int width = dep->width;
   int height = dep->height;
   float center_x = width/2; float center_y = height/2;
-  float focal_length_x = 525.0;//600.0;
-  float focal_length_y = 525.0;//600.0;
+  float focal_length_x = 570.3;//525.0;//600.0;
+  float focal_length_y = 570.3;//525.0;//600.0;
   float desiredAngularResolution = asinf( 0.5f * float(640)/float(focal_length_x) ) / (0.5f*float(640));
   
   pcl::RangeImagePlanar range_image_planar;
