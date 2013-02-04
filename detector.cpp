@@ -207,7 +207,6 @@ void Detector::bbox( std::vector< pcl::PointCloud<pcl::PointXYZRGBA> >& divide,
     
     bbox3d.push_back( min_point );
     bbox3d.push_back( max_point );
-    
   }
 }
 
@@ -222,8 +221,8 @@ void Detector::bbox2dbbox( IplImage* dep,
   int width = dep->width;
   int height = dep->height;
   float center_x = width/2; float center_y = height/2;
-  float focal_length_x = 600.0;
-  float focal_length_y = 600.0;
+  float focal_length_x = 525.0;//600.0;
+  float focal_length_y = 525.0;//600.0;
   float desiredAngularResolution = asinf( 0.5f * float(640)/float(focal_length_x) ) / (0.5f*float(640));
   
   pcl::RangeImagePlanar range_image_planar;
@@ -241,7 +240,7 @@ void Detector::bbox2dbbox( IplImage* dep,
     range_image_planar.getImagePoint( tmp1, x, y, range);
     tmp_pt2d.x = x; tmp_pt2d.y = y;
     bbox2d.push_back( tmp_pt2d );
-		
+
     range_image_planar.getImagePoint( tmp2, x, y, range);
     tmp_pt2d.x = x; tmp_pt2d.y = y;
     bbox2d.push_back( tmp_pt2d );
@@ -259,6 +258,7 @@ void Detector::bbox2dbbox( IplImage* dep,
       bbox2d[i].y = bbox2d[i+1].y;
       bbox2d[i+1].y = tmp;
     }
+
   }
   
 }
