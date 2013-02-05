@@ -3,6 +3,10 @@
 
 using namespace MatIO;
 
+/**
+ * @return void
+ * @param[in] path Part-based Model's path
+ */
 PBM::PBM(char* path)
 {
   m_modelPath = std::string(path);
@@ -10,6 +14,9 @@ PBM::PBM(char* path)
   setData();
 }
 
+/**
+ * delete Part-based Model Structure
+ */
 PBM::~PBM()
 {
   //delete(pDetector.kdes)TODO!!
@@ -17,6 +24,11 @@ PBM::~PBM()
   delete m_jDetector;
 }
 
+/**
+ * モデル情報を格納したヘッダファイルをロード
+ * @return bool success or false
+ * @param[in] filePath File path
+ */
 bool PBM::readModelHead( std::string filePath )
 {
   std::ifstream input( filePath.c_str() );
@@ -76,6 +88,9 @@ bool PBM::readModelHead( std::string filePath )
   return true;
 }
 
+/**
+ * @return bool success or false
+ */
 bool PBM::setData()
 {
   setData_PD();
@@ -84,6 +99,10 @@ bool PBM::setData()
   return true;
 }
 
+/**
+ * Part-Detectorをロード
+ * @return bool success or false
+ */
 bool PBM::setData_PD()
 {
   for( int i = 0; i < m_pdNum; i++ ){
@@ -125,6 +144,10 @@ bool PBM::setData_PD()
   return true;
 }
 
+/**
+ * Joint-Detectorをロード
+ * @return bool success or false
+ */
 bool PBM::setData_JD()
 {
   std::string filepath = m_modelPath + JOINT_DETECTOR_PATH + std::string("/") + m_jDetector->svmDatName;
@@ -157,6 +180,10 @@ bool PBM::setData_JD()
   return true;
 }
 
+/**
+ * 特徴抽出に用いるパラメータ(Kdes Param)をロード. Matlabバイナリからロードする際にMatIOがスレッドセーフでないので、事前展開をここで行う.
+ * @return bool success or false
+ */
 bool PBM::loadKdesParam()
 {
   std::cerr << "setup kdes param from .mat file" << std::endl;
@@ -242,6 +269,12 @@ bool PBM::loadKdesParam()
 
 }
 
+/**
+ *
+ * @return matvarplus_t* matio structure pointer
+ * @param[in] program_name const char* 
+ * @param[in] mat_file File Path
+ */
 matvarplus_t* PBM::loadKdes_mat(const char* program_name,const char* mat_file)
 {
   mat_t* mat = NULL;
@@ -260,6 +293,10 @@ matvarplus_t* PBM::loadKdes_mat(const char* program_name,const char* mat_file)
   }
 }
 
+/**
+ * @return void
+ * @loadClassName[in] path File Path about Trained class name.
+ */
 void PBM::loadClassName(std::string path)
 {
   std::ifstream input( path.c_str() );
@@ -276,6 +313,14 @@ void PBM::loadClassName(std::string path)
   input.close();
 }
 
+/**
+ * メインプロセス関数 特徴抽出、認識を行う
+ * @return double Prediction label
+ * @param[in] kdm this class is charged of extracting features
+ * @param[in] rgb RGB Image from kinect
+ * @param[in] dep Depth Image from kinect
+ * @param[in] top_left Cropped Image Pos 
+ */
 double PBM::Process(KernelDescManager& kdm, IplImage* rgb, IplImage* dep, MatrixXf& top_left)
 {
   double** dec_values = Malloc(double*, m_pdNum);
@@ -293,6 +338,15 @@ double PBM::Process(KernelDescManager& kdm, IplImage* rgb, IplImage* dep, Matrix
   return predict_label;
 }
 
+/**
+ * Part-Detectorに関する処理を担当,特徴抽出、認識。Joint-Detectorのためにスコアを格納
+ * @return void
+ * @param[in] kdm this class is charged of extracting features
+ * @param[in] rgb RGB Image from kinect
+ * @param[in] dep Depth Image from kinect
+ * @param[in] top_left Cropped Image Pos 
+ * @param[out] dec_values The scores from SVM. This score is the distance from hyper plane.
+ */
 void PBM::pDetectorProcess(KernelDescManager& kdm, IplImage* rgb, IplImage* dep,
 			   MatrixXf& top_left, double** dec_values)
 {
@@ -304,6 +358,12 @@ void PBM::pDetectorProcess(KernelDescManager& kdm, IplImage* rgb, IplImage* dep,
   getScore( kdm, imfea, dec_values );  
 }
 
+/** 
+ * Joint-Detectorに関する処理を担当. 
+ * @return predict_label
+ * @param[in] kdm this class is charged of extracting features
+ * @param[in] dec_values the scores from Part-Detector
+ */
 double PBM::jDetectorProcess(KernelDescManager& kdm, double** dec_values)
 {
   //Liblinear only libsvm TODO
@@ -340,6 +400,15 @@ double PBM::jDetectorProcess(KernelDescManager& kdm, double** dec_values)
   return predict_label;
 }
 
+/**
+ * 各Part-Detectorように特徴量を抽出. OpenMPによるマルチスレッドにて実行される.最も処理時間が掛かる部分
+ * @return void
+ * @param[out] imfea(std::vector) 抽出した特徴量を格納
+ * @param[in] kdm this class is charged of extracting features
+ * @param[in] rgb RGB Image
+ * @param[in] dep Depth Image
+ * @param[in] top_left Cropped Image Pos
+ */
 void PBM::pDetectorProcessFea(MatrixXf* imfea, KernelDescManager& kdm,
 			      IplImage* rgb, IplImage* dep, MatrixXf& top_left)
 {
