@@ -180,7 +180,7 @@ void ThreadSegmentation()
 void ThreadLive( char* model )
 {
   CvFont font; SetupFont(font);
-  CvFont fpsFont; cvInitFont(&fpsFont,CV_FONT_HERSHEY_SIMPLEX|CV_FONT_ITALIC, 1, 1, 0, 1);
+  CvFont fpsFont; cvInitFont(&fpsFont,CV_FONT_HERSHEY_SIMPLEX|CV_FONT_ITALIC, 0.7, 0.7, 0, 1);
   
   PBM pbm(model);
   KernelDescManager kdm;
@@ -247,7 +247,7 @@ void ThreadLive( char* model )
 	
 	char fps[16];
 	sprintf( fps, "%.3lf [sec]", t.get() );
-	cvPutText(rgb_src, fps, cvPoint(rgb_src->width-110,30), &font, cvScalar(0,0,256));
+	cvPutText(rgb_src, fps, cvPoint(rgb_src->width-150,30), &font, cvScalar(0,0,256));
 	cvShowImage("Process View", rgb_src);
 
 	isGetImg = false;

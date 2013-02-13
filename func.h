@@ -76,8 +76,8 @@ MatrixXf read_topleft_loc( string filename )
 
 void SetupFont (CvFont& font)
 {
-  double hScale=0.4;
-  double vScale=0.4;
+  double hScale=0.7;
+  double vScale=0.7;
   int    lineWidth=1;
   cvInitFont(&font,CV_FONT_HERSHEY_SIMPLEX|CV_FONT_ITALIC, hScale,vScale,0,lineWidth);
 }
