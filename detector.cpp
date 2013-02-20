@@ -21,7 +21,11 @@ Detector::~Detector()
 
 }
 
-//OpenNI Grabberより得られた3次元座標を格納した画像データ->pc
+/**
+ * OpenNI Grabberより得られた3次元座標を格納した画像データ->pc
+ * @param[in] pc point cloud data from kinect
+ * @param[out] tmp convert to pcl format
+ */
 void Detector::setpcl( IplImage* pc, pcl::PointCloud<pcl::PointXYZRGBA>::Ptr tmp)
 {
   tmp->width = pc->width; tmp->height = pc->height;
@@ -46,6 +50,14 @@ void Detector::setpcl( IplImage* pc, pcl::PointCloud<pcl::PointXYZRGBA>::Ptr tmp
   
 }
 
+/**
+ * メイン関数 点群データから卓上物体を検出
+ * @param[in] dep Depth Image from kinect
+ * @param[in] cloud point cloud from kinect
+ * @param[in] topleft cropped image's pos
+ * @param[out] bbox2d the segmented result(2D)
+ * @param[out] bbox3d the segmented result(3D)
+ */
 void Detector::detect(IplImage* dep, 
 		      pcl::PointCloud<pcl::PointXYZRGBA>::Ptr cloud,
 		      std::vector<Eigen::MatrixXf>& topleft,
@@ -68,6 +80,12 @@ void Detector::detect(IplImage* dep,
   setTopleftPos( bbox2d, topleft );
 }
 
+/**
+ * 平面検出及び削除
+ * @param[in] cloud input point cloud data
+ * @param[out] cloud_filtered point cloud without plane part
+ * @param[in] threshould
+ */
 void Detector::planeSeg(pcl::PointCloud<pcl::PointXYZRGBA>& cloud,
 			pcl::PointCloud<pcl::PointXYZRGBA>::Ptr cloud_filtered,
 			double threshould )
@@ -130,6 +148,12 @@ void Detector::planeSeg(pcl::PointCloud<pcl::PointXYZRGBA>& cloud,
   t.restart();
 }
 
+/**
+ * 物体を点群の距離をもとに階層型クラスタリング
+ * @param[in] cloud input point cloud data
+ * @param[out] colored for visualization
+ * @param[out] divide clustered objects
+ */
 void Detector::cluster( pcl::PointCloud<pcl::PointXYZRGBA>::Ptr cloud,
 			pcl::PointCloud<pcl::PointXYZRGBA>::Ptr colored,
 			std::vector< pcl::PointCloud<pcl::PointXYZRGBA> >& divide )
@@ -186,6 +210,12 @@ void Detector::cluster( pcl::PointCloud<pcl::PointXYZRGBA>::Ptr cloud,
   std::cout << "Clustering:" << t.elapsed() << " sec" << std::endl << std::endl;
 }
 
+/**
+ * バウンディングボックス作成
+ * @param[in] clustered object
+ * @param[out] cloud add bounding box points
+ * @param[out] bbox3d bounding box's position
+ */
 void Detector::bbox( std::vector< pcl::PointCloud<pcl::PointXYZRGBA> >& divide,
 		     pcl::PointCloud<pcl::PointXYZRGBA>::Ptr cloud,
 		     std::vector<Eigen::Vector4f>& bbox3d )
@@ -211,6 +241,12 @@ void Detector::bbox( std::vector< pcl::PointCloud<pcl::PointXYZRGBA> >& divide,
   }
 }
 
+/**
+ * ３次元バウンディングボックスから２次元バウンディングボックスを作成
+ * @param[in] dep depth image from kinect
+ * @param[in] bbox3d 
+ * @param[out] bbox2d 
+ */
 void Detector::bbox2dbbox( IplImage* dep,
 			   std::vector<Eigen::Vector4f>& bbox3d,
 			   std::vector<CvPoint>& bbox2d )
@@ -264,6 +300,9 @@ void Detector::bbox2dbbox( IplImage* dep,
   
 }
 
+/**
+ * 画面上からバウンディングボックスがはみ出していないか確認及び修正
+ */
 void Detector::evalbboxPos( std::vector<CvPoint>& bbox2d, IplImage* dep )
 {
   int width = dep->width - 1; int height = dep->height - 1;
@@ -281,6 +320,9 @@ void Detector::evalbboxPos( std::vector<CvPoint>& bbox2d, IplImage* dep )
   }
 }
 
+/**
+ * 距離情報を基にソート. 近い物体から順に認識を行うため
+ */
 void Detector::sortDepth( std::vector<Eigen::Vector4f>& bbox3d, 
 			  std::vector<CvPoint>& bbox2d )
 {
@@ -316,6 +358,11 @@ void Detector::sortDepth( std::vector<Eigen::Vector4f>& bbox3d,
   bbox2d.swap( tmp2 );
 }
 
+/**
+ * セグメンテーションした画像の左上座標を保存
+ * @param[in] bbox2d bounding box pos
+ * @param[out] topleft cropped image pos
+ */
 void Detector::setTopleftPos( std::vector<CvPoint>& bbox2d,
 			      std::vector<Eigen::MatrixXf>& topleft )
 {

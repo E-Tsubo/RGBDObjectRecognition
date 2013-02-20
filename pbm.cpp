@@ -481,6 +481,19 @@ void PBM::pDetectorProcessFea(MatrixXf* imfea, KernelDescManager& kdm,
   cout << "KDES Execution time... " << exec_time << endl;
 }
 
+/**
+ * 画像より特徴抽出
+ * @return bool
+ * @param[in] feaIdx feature index No. 
+ * @param[out] feaArr 抽出した特徴量を格納
+ * @param[out] feaMag
+ * @param[out] fgrid_x
+ * @param[out] fgrid_y
+ * @param[in] kdm KernelDescManager Class
+ * @param[in] rgb RGB Image
+ * @param[in] dep Depth Image
+ * @param[in] top_left cropped image's pos.
+ */
 bool PBM::extractFea( int feaIdx, MatrixXf& feaArr, MatrixXf& feaMag, MatrixXf& fgrid_x, MatrixXf& fgrid_y,
 		      KernelDescManager& kdm,
 		      IplImage* _rgb, IplImage* _dep, MatrixXf& _top_left )
@@ -590,6 +603,13 @@ bool PBM::extractFea( int feaIdx, MatrixXf& feaArr, MatrixXf& feaMag, MatrixXf& 
   //cvReleaseImage(&dep_init);
 }
 
+/**
+ * 各Part-Detectorからスコアを取得
+ * @return void
+ * @param[in] kdm KernelDescManager Class
+ * @param[in] imfea extracted feature
+ * @param[out] dec_values socres from Support Vector machine
+ */
 void PBM::getScore( KernelDescManager& kdm, MatrixXf* imfea, double** dec_values )
 {
 #if MULTITHREAD_PART  
@@ -604,6 +624,14 @@ void PBM::getScore( KernelDescManager& kdm, MatrixXf* imfea, double** dec_values
   }
 }
 
+/**
+ * 各Part-Detectorからスコアを取得(線形SVM)
+ * @return void
+ * @param[in] kdm KernelDescManager Class
+ * @param[in] imfea extracted feature
+ * @param[out] dec_values socres from Support Vector machine
+ * @param[in] pdIdx indicate the part-Detector No.
+ */
 void PBM::getScore_liblinear(KernelDescManager& kdm, MatrixXf& imfea, double* dec_values, int pdIdx )
 {
   //Normalizationn
