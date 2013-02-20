@@ -64,6 +64,7 @@ void Detector::detect(IplImage* dep,
   bbox( divide, colored, bbox3d );
   bbox2dbbox( dep, bbox3d, bbox2d );
   evalbboxPos( bbox2d, dep );
+  sortDepth( bbox3d, bbox2d );
   setTopleftPos( bbox2d, topleft );
 }
 
@@ -278,6 +279,41 @@ void Detector::evalbboxPos( std::vector<CvPoint>& bbox2d, IplImage* dep )
     else if( itr->y > height )
       itr->y = height;
   }
+}
+
+void Detector::sortDepth( std::vector<Eigen::Vector4f>& bbox3d, 
+			  std::vector<CvPoint>& bbox2d )
+{
+  std::vector<double> center_dep;
+  
+  for( std::vector<Eigen::Vector4f>::iterator itr = bbox3d.begin();
+       itr != bbox3d.end(); itr++ ){
+    double tmp = itr->z(); itr++;
+    tmp += itr->z(); tmp /= 2.0;
+    center_dep.push_back(tmp);
+    //std::cout << tmp << std::endl;//debug
+  }
+  
+  std::vector<std::size_t> idx(center_dep.size());
+  //std::iota(idx.begin(), idx.end(), 0);//iotaが見つからない. Verによるのかも.再利用性を考慮してforで記述
+  for( int i = 0; i < idx.size(); i++ )
+    idx[i] = i*2;
+  
+  std::sort(idx.begin(), idx.end(), compare(center_dep) );
+  
+  std::vector<Eigen::Vector4f> tmp3; std::vector<CvPoint> tmp2;
+  for( std::size_t i = 0; i < idx.size(); i++ ){
+    tmp3.push_back( bbox3d[ idx[i] ] );
+    tmp3.push_back( bbox3d[ idx[i]+1 ] );
+    
+    tmp2.push_back( bbox2d[ idx[i] ] );
+    tmp2.push_back( bbox2d[ idx[i]+1 ] );
+  }
+  
+  //for( std::size_t i = 0; i < idx.size()*2; i+=2 )
+  //std::cout << (tmp3[i].z()+tmp3[i+1].z())/2.0 << std::endl;//debug
+  bbox3d.swap( tmp3 );
+  bbox2d.swap( tmp2 );
 }
 
 void Detector::setTopleftPos( std::vector<CvPoint>& bbox2d,

@@ -2,6 +2,8 @@
 #define __DETECTOR__
 
 #include <vector>
+#include <numeric>
+#include <algorithm>
 #include <boost/timer.hpp>
 #include <opencv2/opencv.hpp>
 #include <Eigen/Core>
@@ -55,9 +57,30 @@ class Detector
   
   void evalbboxPos( std::vector<CvPoint>& bbox2d, IplImage* dep );
   
+  void sortDepth( std::vector<Eigen::Vector4f>& bbox3d, 
+		  std::vector<CvPoint>& bbox2d );
   void setTopleftPos( std::vector<CvPoint>& bbox2d,
 		      std::vector<Eigen::MatrixXf>& topleft );
  private:
   
+};
+
+
+class compare
+{
+private:
+  std::vector<double> const& m_v;
+  
+ public:
+  typedef bool result_type;
+    
+ compare(std::vector<double> const& _v)
+   : m_v(_v)
+  {}
+  
+  bool operator()(std::size_t a, std::size_t b) const
+  {
+    return (m_v[a] < m_v[b]);
+  }
 };
 #endif
