@@ -275,20 +275,48 @@ void LiveDemo(char* model)
 
 int main( int argc, char** argv )
 {
-  //Simple Demo
-  //ImageDemo( argv );
+  int opt = -1;
+  std::cout << "Enter  '1' for Simple Image Demo, not yet TODO!!,          " << std::endl
+	    << "       '2' for Dataset Demo,                               " << std::endl
+	    << "       '3' for Dataset Demo(Segmentation), not yet TODO!!, " << std::endl
+	    << "       '4' for Segmentation Demo (No Recognition),         " << std::endl
+	    << "       '5' for Live Recognition Demo(Segmentation).        " << std::endl;
+  std::cout << "--->";
+  std::cin >> opt;
+  std::cout << "Opt: " << opt << std::endl;
   
-  //Dataset Demo
-  //DataSetDemo( argv );
-  
-  //Dataset Demo
-  //DataSetDemo_Segmentation( argv );//Not yet!!
+  switch( opt ){
 
-  //Segmentation Demo (No Recognition)
-  //SegmentationDemo();
+  case 1:
+    //Simple Demo
+    //ImageDemo( argv ); //Not yet!!
+    break;
   
-  //Live(Kinect) Demo
-  LiveDemo(argv[1]);
+  case 2:
+    //Dataset Demo
+    DataSetDemo( argv );
+    break;
+
+  case 3:
+    //Dataset Demo
+    DataSetDemo_Segmentation( argv );//Not yet!!
+    break;
+
+  case 4:
+    //Segmentation Demo (No Recognition)
+    SegmentationDemo();
+    break;
+
+  case 5:
+    //Live(Kinect) Demo
+    LiveDemo(argv[1]);
+    break;
+
+  default:
+    std::cerr << "No Option!!" << std::endl;
+    break;
+    
+  }
   
   return 0;
 }
