@@ -3,6 +3,7 @@ CFLAG	= -O3 -msse -msse2 -msse3 -msse4 -fopenmp -mtune=native -march=native
 #CXX	= icc
 #CFLAG	= -O3 -xHOST -ipo -msse -msse2 -msse3 -msse4 -fopenmp
 PCL_FLAG= `pkg-config pcl_common-1.5 pcl_io-1.5 pcl_sample_consensus-1.5 pcl_filters-1.5 pcl_segmentation-1.5 pcl_range_image_border_extractor-1.5 --cflags --libs`
+#PCL_FLAG= `pkg-config pcl_common-1.6 pcl_io-1.6 pcl_sample_consensus-1.6 pcl_filters-1.6 pcl_segmentation-1.6 pcl_range_image_border_extractor-1.6 --cflags --libs`
 
 all: pbmrecog
 
