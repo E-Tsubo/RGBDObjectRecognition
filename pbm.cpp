@@ -49,7 +49,7 @@ bool PBM::readModelHead( std::string filePath )
   cnt = 0;
   while( !ss.eof() ){
     ss >> m_pDetector[cnt].feaNum;
-    std::cout << m_pDetector[cnt].feaNum << std::endl;
+    //std::cout << m_pDetector[cnt].feaNum << std::endl;//debug
     cnt++;
   }
   
@@ -330,7 +330,7 @@ void PBM::loadClassName(std::string path)
   while( !ss.eof() ){
     ss >> tmp;
     m_jDetector->className.push_back(tmp);
-    std::cout << tmp << std::endl;
+    //std::cout << tmp << std::endl;//debug
   }
   std::cout << "Training Object Class Num is " << m_jDetector->className.size() << std::endl;
   input.close();
@@ -450,6 +450,28 @@ void PBM::pDetectorProcessFea(MatrixXf* imfea, KernelDescManager& kdm,
   
   if( m_pDetector[0].feaNum == 1 ){
     //Single Feature
+    extractFea( 0, tmp_feaArr[0], tmp_feaMag[0], tmp_fgrid_x[0], tmp_fgrid_y[0], kdm, rgb, dep, top_left );
+#if MULTITHREAD_PART  
+    omp_set_num_threads(m_pdNum);
+    std::cerr << "[OpenMP] Enable Thread Num. " << omp_get_max_threads() << std::endl;
+#pragma omp parallel for
+#endif
+    for( int looppd = 0; looppd < m_pdNum; looppd++ ){//各part-detectorモデル用にbag of feature化
+      MatrixXf tmp_imfea[m_pDetector[looppd].feaNum];
+      kdm.CKSVDEMK( tmp_imfea[0], tmp_feaArr[0], tmp_feaMag[0],
+		    tmp_fgrid_y[0], tmp_fgrid_x[0], rgb->height, rgb->width,
+		    m_pDetector[looppd].kdesparam[0].emkWords,
+		    m_pDetector[looppd].kdesparam[0].emkG,
+		    m_pDetector[looppd].kdesparam[0].emkPyramid,
+		    m_pDetector[looppd].kdesparam[0].emkKparam );
+      
+      int index = 0;
+      (imfea[looppd]).resize(tmp_imfea[0].rows(),1);
+      for( int i = 0; i < tmp_imfea[0].rows(); i++ ){
+	(imfea[looppd])(index,0) = tmp_imfea[0](i,0);
+	index++;
+      }
+    }
     
   }else{
     //Multi Feature( RGB-D Joint Feature )
