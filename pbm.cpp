@@ -68,6 +68,16 @@ bool PBM::readModelHead( std::string filePath )
     //std::cout << std::endl;
   }
   
+  //Part-Detector(SVM) param
+  std::getline( input, str );
+  ss.str(""); ss.clear(); ss.str(str);
+  ss >> tmp >> tmp;
+  for( int i = 0; i < m_pdNum; i++ )
+    m_pDetector[i].svmType = tmp;
+  ss >> tmp;
+  for( int i = 0; i < m_pdNum; i++ )
+    m_pDetector[i].normalType = tmp;
+  
   //JOINTMODEL
   m_jDetector = new _jDetector;
   std::getline( input, str );
@@ -83,6 +93,14 @@ bool PBM::readModelHead( std::string filePath )
   std::getline( input, str );
   ss.str(""); ss.clear(); ss.str(str);
   ss >> tmp >> m_jDetector->classNameFile;
+  
+  //Joint-Detector(SVM) param
+  std::getline( input, str );
+  ss.str(""); ss.clear(); ss.str(str);
+  ss >> tmp >> tmp;
+  m_jDetector->svmType = tmp;
+  ss >> tmp;
+  m_jDetector->normalType = tmp;
   
   input.close();
   return true;

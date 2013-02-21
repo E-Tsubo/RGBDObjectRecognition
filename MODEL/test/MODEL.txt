@@ -6,7 +6,8 @@ left gradkdes.mat rgbkdes.mat gradkdes_dep.mat normalkdes.mat jointkdes.mat
 right gradkdes.mat rgbkdes.mat gradkdes_dep.mat normalkdes.mat jointkdes.mat
 top gradkdes.mat rgbkdes.mat gradkdes_dep.mat normalkdes.mat jointkdes.mat
 bottom gradkdes.mat rgbkdes.mat gradkdes_dep.mat normalkdes.mat jointkdes.mat
+PSVMPARAM liblinear linear
 JOINTMODEL pbm.model
 MINMAXVALUE svmdat.mat
 CLASSNAME classname.txt
-
+JSVMPARAM liblinear linear

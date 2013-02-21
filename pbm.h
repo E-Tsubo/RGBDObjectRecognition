@@ -48,7 +48,8 @@ typedef struct{
   std::vector<MatIO::matvarplus_t*> kdes;
   std::vector<_kdesStructure> kdesparam;
   struct model* svmModel;
-  //liblinea, libsvmの識別フラグが必要
+  std::string svmType;
+  std::string normalType;
   MatrixXf minvalue, maxvalue;
 } _pDetector;
 
@@ -60,6 +61,8 @@ typedef struct{
   MatIO::matvarplus_t* svmData;
   struct model* svmModel;
   //struct svm_model _svm;
+  std::string svmType;
+  std::string normalType;
   MatrixXf minvalue, maxvalue;
   
   std::vector<std::string> className;
