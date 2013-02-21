@@ -107,7 +107,9 @@ bool PBM::setData_PD()
 {
   for( int i = 0; i < m_pdNum; i++ ){
     std::string path = m_modelPath + PART_DETECTOR_PATH + std::string("/") + m_pDetector[i].part;
+    
     for( int j = 0; j < m_pDetector[i].feaNum; j++ ){
+      
       /****************************************************************************************
        * kerneldescriptor
        ***************************************************************************************/
@@ -122,7 +124,7 @@ bool PBM::setData_PD()
       //get_matrix(gpoints, m_pDetector[i].kdes[j], "test->svm->w");
     }
     
-    //Joint FEATURE
+    //Joint FEATURE Single FeatureでなくJoint-Featureであるならばjointkdes.matをロード
     if( m_pDetector[i].feaNum != 1 ){
       std::string filepath = path + std::string("/") + m_pDetector[i].kdesName[m_pDetector[i].feaNum];
       std::cout << "Loading... " << filepath << std::endl;
@@ -131,7 +133,7 @@ bool PBM::setData_PD()
     }
     
     /****************************************************************************************
-     * svm(liblinear)
+     * svm(liblinear) Part-Detectorはliblinearのみをサポート
      ***************************************************************************************/
     std::string filepath = path + std::string("/") + m_pDetector[i].part + std::string(MODEL_EXTENSION);
     std::cout << "Loading... " << filepath << std::endl;
@@ -158,7 +160,7 @@ bool PBM::setData_JD()
   m_jDetector->svmData = loadKdes_mat( "Param file", filepath.c_str() );
   
   /****************************************************************************************
-   * svm(liblinear or libsvm)
+   * svm(liblinear or libsvm) TODO only support liblinear now
    ***************************************************************************************/
   filepath = m_modelPath + JOINT_DETECTOR_PATH + std::string("/") + m_jDetector->modelName;
   std::cout << "Loading... " << filepath << std::endl;
@@ -169,7 +171,6 @@ bool PBM::setData_JD()
   //minvalue, maxvalue
   get_matrix(m_jDetector->minvalue, m_jDetector->svmData,"svmdat->minvalue"); 
   get_matrix(m_jDetector->maxvalue, m_jDetector->svmData,"svmdat->maxvalue"); 
-  
   
   /****************************************************************************************
    * svm param(classname)
@@ -263,7 +264,11 @@ bool PBM::loadKdesParam()
       get_matrix(m_pDetector[i].minvalue, m_pDetector[i].kdes[m_pDetector[i].feaNum],"jointkdes->svm->minvalue"); 
       get_matrix(m_pDetector[i].maxvalue, m_pDetector[i].kdes[m_pDetector[i].feaNum],"jointkdes->svm->maxvalue"); 
     }else{
-      //TODO
+      int loc = m_pDetector[i].kdesName[0].find(".mat");
+      std::string tmp = m_pDetector[i].kdesName[0].erase(loc);
+      get_matrix(m_pDetector[i].minvalue, m_pDetector[i].kdes[0], ( tmp+std::string("->svm->minvalue") ).c_str() );
+      get_matrix(m_pDetector[i].maxvalue, m_pDetector[i].kdes[0], ( tmp+std::string("->svm->maxvalue") ).c_str() );
+      //このコードが動作すれば上記の冗長なコードを簡略化できる
     }
   }
 
