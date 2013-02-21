@@ -25,6 +25,25 @@ static IplImage* out_pc = NULL;
 extern boost::mutex m;
 extern bool isRun;
 
+//マウスの状態を格納する構造体
+typedef struct MouseParam{
+  unsigned int x;
+  unsigned int y;
+  int event;
+  int flags;
+} MouseParam;
+
+//Callback関数[マウスの状態を取得]
+void mouseFunc(int event, int x, int y, int flags, void  *param)
+{
+  MouseParam *mparam = (MouseParam*)param;
+  mparam->x = x;
+  mparam->y = y;
+  mparam->event = event;
+  mparam->flags = flags;
+  //std::cerr << "Mouse Pos:" << x << " " << y << std::endl;//debug
+}
+
 void GetFileListFromDirectory(vector<string>& src, const char* directory)
 {
   if (boost::filesystem::is_directory(directory))

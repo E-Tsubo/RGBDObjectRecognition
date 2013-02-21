@@ -192,8 +192,10 @@ void ThreadLive( char* model )
   std::vector<CvPoint> bbox2d; std::vector<Eigen::Vector4f> bbox3d; 
   
   bool isGetImg = false;
+  MouseParam mparam;
   cvNamedWindow("Process View", CV_WINDOW_AUTOSIZE);
   cvMoveWindow("Process View", 50, 50);
+  cv::setMouseCallback("Process View", &mouseFunc, &mparam);
   Timer t;
   
   while( isRun )
