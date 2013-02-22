@@ -5,6 +5,7 @@
 #include <fstream>
 #include <string>
 #include <vector>
+#include <functional>
 #include <Eigen/Core>
 #include <Eigen/Dense>
 #include <Eigen/Eigen>
@@ -68,6 +69,32 @@ typedef struct{
   std::vector<std::string> className;
 } _jDetector;
 
+typedef struct{
+  std::vector<double> jd_dec_values;
+  std::vector<std::size_t> idx;
+  //double* jd_dec_values;
+  int jd_predictlabel;
+  //int pd_predictlabel;
+} _predictResult;
+
+class compare_descending
+{
+private:
+    std::vector<double> const& m_v;
+
+public:
+    typedef bool result_type;
+    
+    compare_descending(std::vector<double> const& _v)
+        : m_v(_v)
+    {}
+    
+    bool operator()(std::size_t a, std::size_t b) const
+    {
+        return (m_v[a] > m_v[b]);
+    }
+};
+
 class PBM
 {
  public:
@@ -101,6 +128,29 @@ class PBM
       return m_jDetector->className[idx];
     };
   
+  void setResult( int label, double* dec_values )
+  {
+    m_predictData->jd_dec_values.clear();
+    m_predictData->jd_predictlabel = label;
+    for( int i = 0; i < m_jDetector->className.size(); i++ )
+      m_predictData->jd_dec_values.push_back( dec_values[i] );
+    /*
+    std::sort( m_predictData->jd_dec_values.begin(),
+	       m_predictData->jd_dec_values.end(),
+	       greater<double>() );
+    */
+    m_predictData->idx.resize( m_jDetector->className.size() );
+    for( int i = 0; i < m_predictData->idx.size(); i++ )
+      m_predictData->idx[i] = i;
+    
+    std::sort( m_predictData->idx.begin(),
+	       m_predictData->idx.end(),
+	       compare_descending(m_predictData->jd_dec_values) );
+    for(int i = 0; i < m_predictData->idx.size(); i++ )
+      std::cerr << m_predictData->idx[i] << " "
+		<< m_predictData->jd_dec_values[m_predictData->idx[i]] << std::endl;
+  };
+  
  private:
   std::string m_modelPath;
     
@@ -109,6 +159,8 @@ class PBM
   _pDetector *m_pDetector;
   _jDetector *m_jDetector;
   std::vector<std::string> m_className;
+  
+  //Result Var//
+  _predictResult *m_predictData;
 };
-
 #endif

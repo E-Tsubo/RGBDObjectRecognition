@@ -12,6 +12,8 @@ PBM::PBM(char* path)
   m_modelPath = std::string(path);
   readModelHead( m_modelPath+MODEL_HEAD );
   setData();
+  
+  m_predictData = new _predictResult;
 }
 
 /**
@@ -19,6 +21,7 @@ PBM::PBM(char* path)
  */
 PBM::~PBM()
 {
+  delete m_predictData;
   //delete(pDetector.kdes)TODO!!
   delete [] m_pDetector;
   delete m_jDetector;
@@ -415,9 +418,11 @@ double PBM::jDetectorProcess(KernelDescManager& kdm, double** dec_values)
     std::cerr << "model->bias >= 0! Not supported!!" << std::endl;
   }
   
-  double* joint_dec_values = Malloc(double, nr_class);
+  double* joint_dec_values = Malloc(double, nr_class);//Previous
   double predict_label = predict_values( m_jDetector->svmModel, x, joint_dec_values );
+  setResult( predict_label, joint_dec_values );
   std::cerr << "Joint-Detector Predict Lable " << predict_label << std::endl;//debug
+  free(joint_dec_values);
   free(x);
   
   return predict_label;
