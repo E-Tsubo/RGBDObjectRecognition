@@ -180,7 +180,7 @@ void ThreadSegmentation()
 void ThreadLive( char* model )
 {
   CvFont font; SetupFont(font);
-  CvFont fpsFont; cvInitFont(&fpsFont,CV_FONT_HERSHEY_SIMPLEX|CV_FONT_ITALIC, 0.7, 0.7, 0, 1);
+  CvFont fpsFont; SetupFont(fpsFont);
   
   PBM pbm(model);
   KernelDescManager kdm;
