@@ -285,8 +285,9 @@ bool PBM::loadKdesParam()
       get_matrix(m_pDetector[i].minvalue, m_pDetector[i].kdes[m_pDetector[i].feaNum],"jointkdes->svm->minvalue"); 
       get_matrix(m_pDetector[i].maxvalue, m_pDetector[i].kdes[m_pDetector[i].feaNum],"jointkdes->svm->maxvalue"); 
     }else{
-      int loc = m_pDetector[i].kdesName[0].find(".mat");
-      std::string tmp = m_pDetector[i].kdesName[0].erase(loc);
+      std::string tmpstr = m_pDetector[i].kdesName[0];
+      int loc = tmpstr.find(".mat");
+      std::string tmp = tmpstr.erase(loc);
       get_matrix(m_pDetector[i].minvalue, m_pDetector[i].kdes[0], ( tmp+std::string("->svm->minvalue") ).c_str() );
       get_matrix(m_pDetector[i].maxvalue, m_pDetector[i].kdes[0], ( tmp+std::string("->svm->maxvalue") ).c_str() );
       //このコードが動作すれば上記の冗長なコードを簡略化できる
