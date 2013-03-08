@@ -13,6 +13,7 @@
 #include "detector.h"
 #include "matio.h"
 #include "func.h"
+#include "pgplotfunc.h"
 
 /****************************************************************
  *指定フォルダ中の画像(rgb,dep,loc)を読み取り順次認識を行う
@@ -196,6 +197,7 @@ void ThreadLive( char* model )
   cvNamedWindow("Process View", CV_WINDOW_AUTOSIZE);
   cvMoveWindow("Process View", 50, 50);
   cv::setMouseCallback("Process View", &mouseFunc, &mparam);
+  //initpg(pbm.getClassNum());//for debug vis
   Timer t;
   
   while( isRun )
@@ -251,11 +253,15 @@ void ThreadLive( char* model )
 	sprintf( fps, "%.3lf [sec]", t.get() );
 	cvPutText(rgb_src, fps, cvPoint(rgb_src->width-150,30), &font, cvScalar(0,0,256));
 	cvShowImage("Process View", rgb_src);
+	
+	//erasepg(pbm.getClassNum());//for debug vis
+	//drawpg( pbm.getClassNum(), &pbm );//for debug vis
 
 	isGetImg = false;
       }
       
     }
+  //delpg();//for debug vis
 }
 
 

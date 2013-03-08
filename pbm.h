@@ -151,6 +151,13 @@ class PBM
 		<< m_predictData->jd_dec_values[m_predictData->idx[i]] << std::endl;
   };
   
+  double getResult( int idx )
+  {
+    return m_predictData->jd_dec_values[idx];
+  };
+  
+  int getClassNum() { return m_jDetector->className.size(); };
+  
  private:
   std::string m_modelPath;
     

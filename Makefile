@@ -9,7 +9,7 @@ all: pbmrecog
 
 pbmrecog: main.o pbm.o kerneldesc.o detector.o
 	$(CXX) $(CFLAG) -o pbmrecog main.o pbm.o kerneldesc.o detector.o liblinear/tron.cpp liblinear/linear.cpp liblinear/blas/blas.a \
-	`pkg-config opencv matio --cflags --libs` $(PCL_FLAG) -lhdf5 -IInclude -lboost_filesystem -lboost_system -lboost_thread
+	`pkg-config opencv matio --cflags --libs` $(PCL_FLAG) -lhdf5 -IInclude -lboost_filesystem -lboost_system -lboost_thread -lcpgplot -lpgplot -lX11
 
 main.o: main.cpp
 	$(CXX) $(CFLAG) -c main.cpp `pkg-config opencv matio --cflags --libs` $(PCL_FLAG) -lhdf5 -IInclude -lboost_filesystem -lboost_system -lboost_thread
