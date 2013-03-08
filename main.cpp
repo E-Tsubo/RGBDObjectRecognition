@@ -197,7 +197,7 @@ void ThreadLive( char* model )
   cvNamedWindow("Process View", CV_WINDOW_AUTOSIZE);
   cvMoveWindow("Process View", 50, 50);
   cv::setMouseCallback("Process View", &mouseFunc, &mparam);
-  //initpg(pbm.getClassNum());//for debug vis
+  initpg(pbm.getClassNum());//for debug vis
   Timer t;
   
   while( isRun )
@@ -225,6 +225,8 @@ void ThreadLive( char* model )
 	detector.setpcl( pc_src, pc_pcl );
 	detector.detect( dep_src, pc_pcl, top_left, bbox2d, bbox3d );
 	
+	erasepg(pbm.getClassNum());//for debug vis
+	
 	//Recognition Loop
 	for( int i = 0; i < bbox2d.size(); i+=2 ){
 	  cv::Rect brect( (int)bbox2d[i].x, (int)bbox2d[i].y, (int)bbox2d[i+1].x-(int)bbox2d[i+0].x, (int)bbox2d[i+1].y-(int)bbox2d[i+0].y );
@@ -247,6 +249,8 @@ void ThreadLive( char* model )
 	  cvPutText(rgb_src, resultObj.c_str(), cvPoint(bbox2d[i].x,bbox2d[i].y), &font,cvScalar(0,256,0));
 	  cvReleaseImage(&rgb_crop);
 	  cvReleaseImage(&dep_crop);
+	  
+	  drawpg( pbm.getClassNum(), &pbm, i/2 );//for debug vis
 	}
 	
 	char fps[16];
@@ -254,14 +258,11 @@ void ThreadLive( char* model )
 	cvPutText(rgb_src, fps, cvPoint(rgb_src->width-150,30), &font, cvScalar(0,0,256));
 	cvShowImage("Process View", rgb_src);
 	
-	//erasepg(pbm.getClassNum());//for debug vis
-	//drawpg( pbm.getClassNum(), &pbm );//for debug vis
-
 	isGetImg = false;
       }
       
     }
-  //delpg();//for debug vis
+  delpg();//for debug vis
 }
 
 
