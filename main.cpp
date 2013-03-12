@@ -197,7 +197,7 @@ void ThreadLive( char* model )
   cvNamedWindow("Process View", CV_WINDOW_AUTOSIZE);
   cvMoveWindow("Process View", 50, 50);
   cv::setMouseCallback("Process View", &mouseFunc, &mparam);
-  initpg(pbm.getClassNum());//for debug vis
+  //initpg(pbm.getClassNum());//for debug vis
   Timer t;
   
   while( isRun )
@@ -225,7 +225,7 @@ void ThreadLive( char* model )
 	detector.setpcl( pc_src, pc_pcl );
 	detector.detect( dep_src, pc_pcl, top_left, bbox2d, bbox3d );
 	
-	erasepg(pbm.getClassNum());//for debug vis
+	//erasepg(pbm.getClassNum());//for debug vis
 	
 	//Recognition Loop
 	for( int i = 0; i < bbox2d.size(); i+=2 ){
@@ -250,7 +250,7 @@ void ThreadLive( char* model )
 	  cvReleaseImage(&rgb_crop);
 	  cvReleaseImage(&dep_crop);
 	  
-	  drawpg( pbm.getClassNum(), &pbm, i/2 );//for debug vis
+	  //drawpg( pbm.getClassNum(), &pbm, i/2 );//for debug vis
 	}
 	
 	char fps[16];
@@ -262,7 +262,7 @@ void ThreadLive( char* model )
       }
       
     }
-  delpg();//for debug vis
+  //delpg();//for debug vis
 }
 
 

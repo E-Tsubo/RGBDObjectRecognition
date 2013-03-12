@@ -99,7 +99,7 @@ void Detector::planeSeg(pcl::PointCloud<pcl::PointXYZRGBA>& cloud,
   pcl::PassThrough<pcl::PointXYZRGBA> pass;
   pass.setInputCloud( cloud.makeShared() );//makeShared provide smartPtr.
   pass.setFilterFieldName( "z" );
-  pass.setFilterLimits( 0.0, 0.7 );//奥行き制限
+  pass.setFilterLimits( 0.0, 0.9 );//奥行き制限
   pass.filter( cloud );
   
   //Down Sampling
