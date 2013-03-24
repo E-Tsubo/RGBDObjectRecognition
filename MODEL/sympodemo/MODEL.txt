@@ -1,0 +1,13 @@
+PARTNUM 5
+FEATURENUM 1 1 1 1 1
+FEATURE
+full gradkdes.mat
+left gradkdes.mat
+right gradkdes.mat
+top gradkdes.mat
+bottom gradkdes.mat
+PSVMPARAM liblinear linear
+JOINTMODEL joint.model
+MINMAXVALUE svmdat.mat
+CLASSNAME classname.txt
+JSVMPARAM liblinear linear
